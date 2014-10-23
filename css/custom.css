@@ -1,0 +1,11 @@
+.container.theme-showcase {
+  margin-top:1em;
+}
+
+
+.products li {
+  margin:1em 0 1em 0;
+  padding:0;
+  list-style-type: none;
+  font-size:1.3em;
+}
