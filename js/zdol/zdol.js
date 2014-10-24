@@ -13,7 +13,8 @@ PouchDB.replicate(false);
 
 // init the zdol obj with core properties
 var zdol = {
-  content_urlbase: ''
+  content_urlbase: null,
+  crcTable: null
 };
 
 
@@ -36,6 +37,10 @@ zdol.refresh_content = function(since)
 
       // iterate over all nodes returned by Drupal
       jQuery.each(data, function(index, node) {
+        if(!node.id) {
+            var n = JSON.stringify(node);
+            node.id = crc32(n).toString(36)+n.length.toString(36); //should be good enough to prevent most collisions, pass ID if you really care
+        }
         node._id = node.nid;
 
         //rewrite image URL (if any) to local filesystem version
@@ -97,6 +102,30 @@ zdol.refresh_content = function(since)
           var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
           return v.toString(16);
       }); 
+    };
+
+    var makeCRCTable = function(){
+        var c;
+        var crcTable = [];
+        for(var n =0; n < 256; n++){
+            c = n;
+            for(var k =0; k < 8; k++){
+                c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+            }
+            crcTable[n] = c;
+        }
+        return crcTable;
+    }
+
+    var crc32 = function(str) {
+        var crcTable = zdol.crcTable || (zdol.crcTable = makeCRCTable());
+        var crc = 0 ^ (-1);
+
+        for (var i = 0; i < str.length; i++ ) {
+            crc = (crc >>> 8) ^ crcTable[(crc ^ str.charCodeAt(i)) & 0xFF];
+        }
+
+        return (crc ^ (-1)) >>> 0;
     };
 
 }; // end zdol.refresh_content
