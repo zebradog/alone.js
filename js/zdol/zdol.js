@@ -48,7 +48,7 @@ zdol.refresh_content = function(since)
         var imageFilename = null;
         if (!_.isUndefined(node.image)) {
           imageURL = node.image;
-          imageFilename = guid(); 
+          imageFilename = node.id+'-'+crc32(node.image)+node.image.length.toString(36); 
           node.image =  zdolfs.LOCAL_FILE_BASEURL + imageFilename; 
         }
 
@@ -96,13 +96,6 @@ zdol.refresh_content = function(since)
     .fail(function(jqxhr, textStatus, error) {
       console.log('Could not contact CMS for content update. Either this browser is offline or the CMS site is unreachable.');
     });
-
-    function guid() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-          return v.toString(16);
-      }); 
-    };
 
     function makeCRCTable(){
         var c;
