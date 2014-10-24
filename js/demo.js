@@ -1,6 +1,6 @@
 //var CMS_URL = 'http://bemis.l/'; //socha dev
-//var CMS_URL = 'http://192.168.0.246/bemis-cms/'; //zebradog dev
-var CMS_URL = 'http://dev-bemis.gotpantheon.com/'; //dev server
+var CMS_URL = 'http://192.168.0.246/bemis-cms/rest/products'; //zebradog dev
+//var CMS_URL = 'http://dev-bemis.gotpantheon.com/'; //dev server
 //var CMS_URL = 'http://live-bemis.gotpantheon.com/'; //live server
 
 var CONTENT_UPDATE_INTERVAL = 3*1000;
@@ -35,12 +35,7 @@ bemis.update_product_list_display = function() {
     container.html('');
     _.each(result.rows, function(record, key) {
       var node = record.doc;
-      if (node.type == 'product_type') {
-        var newhtml = '<li>';
-        newhtml += '<img src="' + zdolfs.LOCAL_FILE_BASEURL + node.image.filename + '" width="64" /> ';
-        newhtml += node.title + '</li>';
-        container.append(newhtml);
-      }
+      container.append('<li><img src="'+node.image+'" width="64" />'+node.title+'</li>');
     });
   });
 };

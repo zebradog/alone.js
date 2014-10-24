@@ -30,13 +30,22 @@ zdol.refresh_content = function(since)
   if (_.isUndefined(since)) {
     since = 0;
   }
-  jQuery.getJSON(zdol.content_urlbase + 'zdhl/changednodes/' + since + "?callback=?")
+  jQuery.getJSON(zdol.content_urlbase + '?updated=' + (new Date(since*1000)).toISOString() + "&callback=?")
     .done(function( data ) {
       var node_count = 0;
 
       // iterate over all nodes returned by Drupal
       jQuery.each(data, function(index, node) {
         node._id = node.nid;
+
+        //rewrite image URL (if any) to local filesystem version
+        var imageURL = null;
+        var imageFilename = null;
+        if (!_.isUndefined(node.image)) {
+          imageURL = node.image;
+          imageFilename = guid(); 
+          node.image =  zdolfs.LOCAL_FILE_BASEURL + imageFilename; 
+        }
 
         // query for nid. If exists, update; if not, insert.
         zdol_node_db.get(node.nid, function(err, doc) {
@@ -74,13 +83,20 @@ zdol.refresh_content = function(since)
         // different media types, Drupal field names, etc.  For this iteration,
         // we check for a field called "image" in a node and cache that to 
         // local filesystem.
-        if (!_.isUndefined(node.image)) {
-          var url = zdol.content_urlbase + 'zdhl/file/' + node.image.fid;
-          zdolfs.loadImageToFileSystem(url, node.image.filename, function(){});
+        if(imageURL) {
+          zdolfs.loadImageToFileSystem(imageURL, imageFilename, function(){});
         }
       });
     })
     .fail(function(jqxhr, textStatus, error) {
       console.log('Could not contact CMS for content update. Either this browser is offline or the CMS site is unreachable.');
     });
+
+    function guid() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+          return v.toString(16);
+      }); 
+    };
+
 }; // end zdol.refresh_content
