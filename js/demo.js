@@ -1,7 +1,5 @@
-//var CMS_URL = 'http://bemis.l/'; //socha dev
-var CMS_URL = 'http://192.168.0.246/bemis-cms/rest/products'; //zebradog dev
-//var CMS_URL = 'http://dev-bemis.gotpantheon.com/'; //dev server
-//var CMS_URL = 'http://live-bemis.gotpantheon.com/'; //live server
+//var CMS_URL = 'http://192.168.0.246/bemis-cms/rest/products'; //zebradog dev
+var CMS_URL = 'http://live-bemis.gotpantheon.com/rest/products'; //live server
 
 var CONTENT_UPDATE_INTERVAL = 3*1000;
 
@@ -24,7 +22,7 @@ bemis.refresh_local_content = function() {
   var last = timestamp - (bemis.content_update_interval / 1000);
   zdol.refresh_content(last);
   zdol_node_db.allDocs({include_docs:true}, function(err, result) {
-     console.log(result);
+     //console.log(result);
   });
 
 };
