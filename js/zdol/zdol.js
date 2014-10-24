@@ -41,7 +41,7 @@ zdol.refresh_content = function(since)
             var n = JSON.stringify(node);
             node.id = crc32(n).toString(36)+n.length.toString(36); //should be good enough to prevent most collisions, pass ID if you really care
         }
-        node._id = node.nid;
+        node._id = node.id;
 
         //rewrite image URL (if any) to local filesystem version
         var imageURL = null;
@@ -53,7 +53,7 @@ zdol.refresh_content = function(since)
         }
 
         // query for nid. If exists, update; if not, insert.
-        zdol_node_db.get(node.nid, function(err, doc) {
+        zdol_node_db.get(node.id, function(err, doc) {
           if (err) {
             if (err.status == 404) {
               // node is new.  Insert it.
@@ -104,7 +104,7 @@ zdol.refresh_content = function(since)
       }); 
     };
 
-    var makeCRCTable = function(){
+    function makeCRCTable(){
         var c;
         var crcTable = [];
         for(var n =0; n < 256; n++){
@@ -117,7 +117,7 @@ zdol.refresh_content = function(since)
         return crcTable;
     }
 
-    var crc32 = function(str) {
+    function crc32(str) {
         var crcTable = zdol.crcTable || (zdol.crcTable = makeCRCTable());
         var crc = 0 ^ (-1);
 
