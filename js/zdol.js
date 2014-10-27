@@ -41,9 +41,10 @@ zdol.refresh_content = function(since)
 
       // iterate over all nodes returned by Drupal
       jQuery.each(data, function(index, node) {
+        var n = JSON.stringify(node);
+        node.checksum = crc32(n);
         if(!node.id) {
-            var n = JSON.stringify(node);
-            node.id = crc32(n).toString(36)+n.length.toString(36); //should be good enough to prevent most collisions, pass ID if you really care
+            node.id = node.checksum.toString(36)+n.length.toString(36); //should be good enough to prevent most collisions, pass ID if you really care
         }
         node._id = node.id;
 
@@ -65,36 +66,39 @@ zdol.refresh_content = function(since)
                 if (!err) {
                   node_count++;
                 } else {
-                  console.log(err);
+                  console.error(err);
                 }
               });
             } else {
               console.log(err);
             }
-          } else {
+          } else if(node.checksum != doc.checksum){ //only update if there have been changes
             // node exists.  Update it.
             node._rev = doc._rev;
             zdol_node_db.put(node, function callback(err, result) {
               if (!err) {
                 node_count++;
               } else {
-                console.log(err);
+                console.error(err);
               }
             });
+          } else { //checksum is the same, no changes
+              imageURL = null; //don't write the image
+          }
+
+          // File is now added/updated in pouchdb.  Next, we want to update 
+          // The image file, if there is one.
+          // 
+          // @todo Find a way to make this more generic so it can support 
+          // different media types, Drupal field names, etc.  For this iteration,
+          // we check for a field called "image" in a node and cache that to 
+          // local filesystem.
+          if(imageURL) {
+            zdolfs.loadImageToFileSystem(imageURL, imageFilename, function(){});
           }
 
         });
         
-        // File is now added/updated in pouchdb.  Next, we want to update 
-        // The image file, if there is one.
-        // 
-        // @todo Find a way to make this more generic so it can support 
-        // different media types, Drupal field names, etc.  For this iteration,
-        // we check for a field called "image" in a node and cache that to 
-        // local filesystem.
-        if(imageURL) {
-          zdolfs.loadImageToFileSystem(imageURL, imageFilename, function(){});
-        }
       });
     })
     .fail(function(jqxhr, textStatus, error) {
