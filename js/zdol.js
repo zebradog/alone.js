@@ -14,7 +14,8 @@ PouchDB.replicate(false);
 // init the zdol obj with core properties
 var zdol = {
   content_urlbase: null,
-  crcTable: null
+  crcTable: null,
+  image_fields:['image','content-image']
 };
 
 var zdolfs = {
@@ -48,14 +49,19 @@ zdol.refresh_content = function(since)
         }
         node._id = node.id;
 
-        //rewrite image URL (if any) to local filesystem version
-        var imageURL = null;
-        var imageFilename = null;
-        if (!_.isUndefined(node.image)) {
-          imageURL = node.image;
-          imageFilename = node.id+'-'+crc32(node.image).toString(36)+node.image.length.toString(36); 
-          node.image =  zdolfs.LOCAL_FILE_BASEURL + imageFilename; 
-        }
+        var imageURL = [];
+        var imageFilename = [];
+        jQuery.each(zdol.image_fields,function(i,f){
+          if (node[f]) {
+            if(Object.prototype.toString.call(node[f]) === '[object Array]' && node[f].length == 0){
+              node[f] = null;
+            }else{
+              imageURL[f] = node[f];
+              imageFilename[f] = node.id+'-'+crc32(node[f]).toString(36)+node[f].toString().length.toString(36); 
+              node[f] =  zdolfs.LOCAL_FILE_BASEURL + imageFilename[f]; 
+            }
+          }
+        });
 
         // query for nid. If exists, update; if not, insert.
         zdol_node_db.get(node.id, function(err, doc) {
@@ -83,7 +89,7 @@ zdol.refresh_content = function(since)
               }
             });
           } else { //checksum is the same, no changes
-              imageURL = null; //don't write the image
+              imageURL = []; //don't write the image
           }
 
           // File is now added/updated in pouchdb.  Next, we want to update 
@@ -93,10 +99,13 @@ zdol.refresh_content = function(since)
           // different media types, Drupal field names, etc.  For this iteration,
           // we check for a field called "image" in a node and cache that to 
           // local filesystem.
-          if(imageURL) {
-            zdolfs.loadImageToFileSystem(imageURL, imageFilename, function(){});
+          if(imageURL.length) {
+            jQuery.each(zdol.image_fields,function(i,f){
+                if(imageURL[f]){
+                  zdolfs.loadImageToFileSystem(imageURL[f], imageFilename[f], function(){});
+                }
+            });
           }
-
         });
         
       });
