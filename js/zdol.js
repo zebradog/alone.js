@@ -49,8 +49,8 @@ zdol.refresh_content = function(since)
         }
         node._id = node.id;
 
-        var imageURL = [];
-        var imageFilename = [];
+        var imageURL = {};
+        var imageFilename = {};
         jQuery.each(zdol.image_fields,function(i,f){
           if (node[f]) {
             if(Object.prototype.toString.call(node[f]) === '[object Array]' && node[f].length == 0){
@@ -89,7 +89,7 @@ zdol.refresh_content = function(since)
               }
             });
           } else { //checksum is the same, no changes
-              imageURL = []; //don't write the image
+              //imageURL = {}; //don't write the image
           }
 
           // File is now added/updated in pouchdb.  Next, we want to update 
@@ -99,13 +99,11 @@ zdol.refresh_content = function(since)
           // different media types, Drupal field names, etc.  For this iteration,
           // we check for a field called "image" in a node and cache that to 
           // local filesystem.
-          if(imageURL.length) {
-            jQuery.each(zdol.image_fields,function(i,f){
-                if(imageURL[f]){
-                  zdolfs.loadImageToFileSystem(imageURL[f], imageFilename[f], function(){});
-                }
-            });
-          }
+          jQuery.each(zdol.image_fields,function(i,f){
+              if(imageURL[f]){
+                zdolfs.loadImageToFileSystem(imageURL[f], imageFilename[f], function(){});
+              }
+          });
         });
         
       });
