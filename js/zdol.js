@@ -89,7 +89,7 @@ zdol.refresh_content = function(since)
               }
             });
           } else { //checksum is the same, no changes
-              //imageURL = {}; //don't write the image
+              imageURL = {}; //don't write the image
           }
 
           // File is now added/updated in pouchdb.  Next, we want to update 
