@@ -13,6 +13,7 @@
  *   collection: 'node',        // Name of PouchDB collection to use
  *   collection_reserve: 50,    // PouchDB collection size, in MB
  *   filesystem_reserve: 3000 * 1024 * 1024, // Local filesystem request, in bytes
+ *   LOCAL_FILE_BASEURL: 'filesystem:' + window.location.origin + '/persistent/',
  *   update_immediately: true,  // Request fresh data on page load?
  *   auto_update: true,         // Request fresh data at intervals?
  *   auto_update_interval: 30 * 1000  // Time, in seconds, between requests for fresh data.
@@ -33,6 +34,7 @@ var ZDOL = (function() {
       collection: 'node',
       collection_reserve: 50, // 50 MB
       filesystem_reserve: 3000 * 1024 * 1024, // 3 GB 
+      LOCAL_FILE_BASEURL: 'filesystem:' + window.location.origin + '/persistent/',
       update_immediately: true,
       auto_update: false,
       auto_update_interval: 30 * 1000,
@@ -66,6 +68,7 @@ var ZDOL = (function() {
         instance.refresh_content(last);
       }, this.config.auto_update_interval);
     }
+    
   };
 
 
@@ -152,7 +155,10 @@ var ZDOL = (function() {
                 }
               });
             } else { //checksum is the same, no changes
-                //imageURL = {}; //don't write the image
+                // No change, so we can continue on to the next item in the loop.
+                // We're in a jQuery.each callback here, so a truthy return is
+                // the equivilent of a `continue`
+                return true;
             }
 
             // File is now added/updated in pouchdb.  Next, we want to update 
@@ -176,6 +182,20 @@ var ZDOL = (function() {
       });
   };
   
+  
+  /**
+   * Clear out this instance's local PouchDB collection.  This not only 
+   * deletes the records from the collection, but actually destroys the 
+   * collection itself.  This should be safe, as PouchDB will simply recreate
+   * the collection if future code tries to write to it.
+   * @returns void
+   */
+  ZDOL.prototype.clear = function() {
+    instance = this;
+    PouchDB(this.config.collection).destroy(function(err, info) { 
+      console.log((err) ? err : 'Collection `' + instance.config.collection + '` cleared.');
+    });
+  }
 
   return ZDOL;
 
@@ -222,6 +242,7 @@ var ZDOLFS = (function() {
     function onInitFs(fs) {
       console.log('Opened file system: ' + fs.name);
       LOCAL_FILE_BASEURL = fs.root.toURL();
+      //console.log(LOCAL_FILE_BASEURL);
       callback();
     }
 
@@ -311,7 +332,6 @@ var ZDOLFS = (function() {
     var instance = this;
     window.requestFileSystem(this.config.type, this.config.filesystem_reserve, function (fs) {
       fs.root.getFile(filename, { create: true }, function (fileEntry) {
-        //console.log(fileEntry);
         fileEntry.createWriter(function (fileWriter) {
 
           fileWriter.onwriteend = function (e) {
