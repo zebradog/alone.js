@@ -44,12 +44,18 @@ var ZDOL = (function() {
     // Merge provided properties into defaults
     this.config = _.extend(this.config, config);
     
+    this.ee = new EventEmitter();
+    
     // Set up PouchDB instance
     PouchDB.replicate(false);
     this.db = new PouchDB(this.config.collection, {size: this.config.collection_reserve});
+    instance = this;
+    PouchDB(this.config.collection).info(function(err, info) { 
+      instance.ee.emitEvent('collection_initialized', [info]);
+    });
 
     // For all our local filestore needs
-    this.fs = new ZDOLFS();
+    this.fs = new ZDOLFS({}, this.ee);
 
     // For detecting changes to nodes
     this.crcTable = this.makeCRCTable();
@@ -69,6 +75,11 @@ var ZDOL = (function() {
       }, this.config.auto_update_interval);
     }
     
+  };
+  
+  
+  ZDOL.prototype.on = function(event_name, callable) {
+    this.ee.addListener(event_name, callable);
   };
 
 
@@ -100,6 +111,9 @@ var ZDOL = (function() {
     if (_.isUndefined(since)) {
       since = 0;
     }
+    
+    this.ee.emitEvent('update_started');
+    
     var instance = this;
     jQuery.getJSON(this.config.api_url + '?updated=' + (new Date(since*1000)).toISOString() + "&callback=?")
       .done(function( data ) {
@@ -176,6 +190,7 @@ var ZDOL = (function() {
           });
 
         });
+        instance.ee.emitEvent('update_complete', [data]);
       })
       .fail(function(jqxhr, textStatus, error) {
         console.log('Could not contact CMS for content update. Either this browser is offline or the CMS site is unreachable.');
@@ -215,13 +230,19 @@ var ZDOL = (function() {
  */
 var ZDOLFS = (function() {
   
-  var ZDOLFS = function(config) {
+  var ZDOLFS = function(config, ee) {
     // Defaults
     this.config = {
       filesystem_reserve: 3000 * 1024 * 1024, // 3 GB 
       LOCAL_FILE_BASEURL: 'filesystem:' + window.location.origin + '/persistent/',
       type: window.PERSISTENT
     };
+    
+    // Merge provided properties into defaults
+    this.config = _.extend(this.config, config);
+    
+    // Event Emitter, probably passed in from ZDOL
+    this.ee = ee || new EventEmitter();
     
     this.construct(config);
   };
@@ -286,9 +307,12 @@ var ZDOLFS = (function() {
   
   
   ZDOLFS.prototype.loadImageToFileSystem = function(url, filename, callback) {
+    this.ee.emitEvent('download_initialized', [filename]);
     var instance = this;
     this.xhrDownloadImage(url, filename, function (imageAsBlob, filename) {
+      instance.ee.emitEvent('download_complete', [filename]);
       instance.saveImageToFileSystem(imageAsBlob, filename, function () {
+        instance.ee.emitEvent('download_stored', [filename]);
         callback();
       });
     });
