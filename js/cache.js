@@ -123,7 +123,6 @@ var Cache = (function() {
     jQuery.getJSON(this.config.api_url + '?updated=' + (new Date(since*1000)).toISOString() + "&callback=?")
       .done(function( data ) {
         var node_count = 0;
-
         // iterate over all nodes returned by Drupal
 
         jQuery.each(data, function(index, node) {
@@ -138,8 +137,19 @@ var Cache = (function() {
           var imageFilename = {};
           jQuery.each(instance.config.image_fields, function(i, f) {
             if (node[f]) {
-              if (Object.prototype.toString.call(node[f]) === '[object Array]' && node[f].length == 0){
-                node[f] = null;
+              if (Object.prototype.toString.call(node[f]) === '[object Array]'){
+                var numValues = node[f].length;
+                if(numValues == 0)
+                  node[f] = null;
+                else{
+                  imageURL[f] = [];
+                  imageFilename[f] = [];
+                  for(var i = 0; i < numValues; i++){
+                    imageURL[f][i] = node[f][i];
+                    imageFilename[f][i] = node.id + '-' + instance.crc32(node[f][i]).toString(36) + node[f][i].toString().length.toString(36);
+                    node[f][i] =  instance.config.LOCAL_FILE_BASEURL + imageFilename[f][i];
+                  }
+                }
               } else {
                 imageURL[f] = node[f];
                 imageFilename[f] = node.id + '-' + instance.crc32(node[f]).toString(36) + node[f].toString().length.toString(36);
@@ -189,7 +199,12 @@ var Cache = (function() {
             // local filesystem.
             jQuery.each(instance.config.image_fields, function(i, f) {
                 if(imageURL[f]){
-                  instance.fs.loadImageToFileSystem(imageURL[f], imageFilename[f], function(){});
+                  if(Object.prototype.toString.call(imageURL[f]) === '[object Array]'){
+                    for(var i = 0; i < imageURL[f].length; i++){
+                      instance.fs.loadImageToFileSystem(imageURL[f][i], imageFilename[f][i], function(){});
+                    }
+                  }else
+                    instance.fs.loadImageToFileSystem(imageURL[f], imageFilename[f], function(){});
                 }
             });
           });
