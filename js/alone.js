@@ -1,8 +1,8 @@
 /*
-* Cache 1.0.0
+* Alone.js 1.0.0
 * Offline content caching system using PouchDB and LocalStorage
 *
-* Copyright 2014 ZEBRADOG <support@zebradog.com>
+* Copyright 2015 ZEBRADOG <support@zebradog.com>
 *
 * Authored by
 *   Jason Socha <http://sochadev.com/>
@@ -10,8 +10,8 @@
 */
 
 /**
- * Defines a Cache "class" which can be instantiated unlimited times.
- * @type Cache|Function
+ * Defines a Alone "class" which can be instantiated unlimited times.
+ * @type Alone|Function
  * @param object Config parameters for this instance.  Possible properties:
  * {
  *   api_url: '',               // URL to content API endpoint
@@ -25,14 +25,14 @@
  *   image_fields: ['image']    // array of Drupal field names in which to find images.
  * }
  */
-var Cache = (function() {
+var Alone = (function() {
 
   /**
-   * Cache constructor
+   * Alone constructor
    * @param obj config
    * @returns void
    */
-  var Cache = function(config) {
+  var Alone = function(config) {
     // Defaults
     this.config = {
       api_url: '',
@@ -62,7 +62,7 @@ var Cache = (function() {
     this.cache = [];
 
     // For all our local filestore needs
-    this.fs = new CacheFS({}, this.ee);
+    this.fs = new AloneFS({}, this.ee);
 
     // For detecting changes to nodes
     this.crcTable = this.makeCRCTable();
@@ -84,12 +84,12 @@ var Cache = (function() {
 
   };
 
-  Cache.prototype.on = function(event_name, callable) {
+  Alone.prototype.on = function(event_name, callable) {
     this.ee.addListener(event_name, callable);
   };
 
   //private
-  Cache.prototype.makeCRCTable = function() {
+  Alone.prototype.makeCRCTable = function() {
     var c;
     var crcTable = [];
     for(var n =0; n < 256; n++){
@@ -102,7 +102,7 @@ var Cache = (function() {
     return crcTable;
   };
 
-  Cache.prototype.crc32 = function(str) {
+  Alone.prototype.crc32 = function(str) {
     var crcTable = this.crcTable || (this.crcTable = this.makeCRCTable());
     var crc = 0 ^ (-1);
     for (var i = 0; i < str.length; i++ ) {
@@ -112,7 +112,7 @@ var Cache = (function() {
   };
 
 
-  Cache.prototype.refresh_content = function(since) {
+  Alone.prototype.refresh_content = function(since) {
     if (_.isUndefined(since)) {
       since = 0;
     }
@@ -226,7 +226,7 @@ var Cache = (function() {
    * the collection if future code tries to write to it.
    * @returns void
    */
-  Cache.prototype.clear = function() {
+  Alone.prototype.clear = function() {
     instance = this;
     PouchDB(this.config.collection).destroy(function(err, info) {
       console.log((err) ? err : 'Collection `' + instance.config.collection + '` cleared.');
@@ -236,8 +236,8 @@ var Cache = (function() {
   }
 
   /**
-   * Defines a CacheFS "class" which can be instantiated unlimited times.
-   * @type CacheFS|Function
+   * Defines a AloneFS "class" which can be instantiated unlimited times.
+   * @type AloneFS|Function
    * @param object Config parameters for this instance.  Possible properties:
    * {
    *   filesystem_reserve: 3000 * 1024 * 1024, // Local filesystem request, in bytes
@@ -245,9 +245,9 @@ var Cache = (function() {
    *   type: window.PERSISTENT
    * }
    */
-  var CacheFS = (function() {
+  var AloneFS = (function() {
 
-    var CacheFS = function(config, ee) {
+    var AloneFS = function(config, ee) {
       // Defaults
       this.config = {
         filesystem_reserve: 3000 * 1024 * 1024, // 3 GB
@@ -258,14 +258,14 @@ var Cache = (function() {
       // Merge provided properties into defaults
       this.config = _.extend(this.config, config);
 
-      // Event Emitter, probably passed in from Cache
+      // Event Emitter, probably passed in from Alone
       this.ee = ee || new EventEmitter();
 
       this.construct(config);
     };
 
 
-    CacheFS.prototype.construct = function(config) {
+    AloneFS.prototype.construct = function(config) {
       // Merge provided properties into defaults
       this.config = _.extend(this.config, config);
 
@@ -276,7 +276,7 @@ var Cache = (function() {
     };
 
 
-    CacheFS.prototype.init_filesystem = function(callback) {
+    AloneFS.prototype.init_filesystem = function(callback) {
       function onInitFs(fs) {
         console.log('Opened file system: ' + fs.name);
         LOCAL_FILE_BASEURL = fs.root.toURL();
@@ -295,7 +295,7 @@ var Cache = (function() {
     };
 
 
-    CacheFS.prototype.error_handler = function(e) {
+    AloneFS.prototype.error_handler = function(e) {
       var msg = '';
 
       switch (e.code) {
@@ -323,7 +323,7 @@ var Cache = (function() {
     };
 
 
-    CacheFS.prototype.loadImageToFileSystem = function(url, filename, callback) {
+    AloneFS.prototype.loadImageToFileSystem = function(url, filename, callback) {
       this.ee.emitEvent('download_initialized', [filename]);
       var instance = this;
       this.xhrDownloadImage(url, filename, function (imageAsBlob, filename) {
@@ -336,7 +336,7 @@ var Cache = (function() {
     };
 
 
-    CacheFS.prototype.xhrDownloadImage = function (url, filename, callback) {
+    AloneFS.prototype.xhrDownloadImage = function (url, filename, callback) {
       var xhr = new XMLHttpRequest();
 
       xhr.open("GET", url, true);
@@ -369,7 +369,7 @@ var Cache = (function() {
     };
 
 
-    CacheFS.prototype.saveImageToFileSystem = function(imageAsBlob, filename, callback) {
+    AloneFS.prototype.saveImageToFileSystem = function(imageAsBlob, filename, callback) {
       var instance = this;
       window.requestFileSystem(this.config.type, this.config.filesystem_reserve, function (fs) {
         fs.root.getFile(filename, { create: true }, function (fileEntry) {
@@ -386,10 +386,10 @@ var Cache = (function() {
       }, this.error_handler);
     };
 
-    return CacheFS;
+    return AloneFS;
 
   })();
 
-  return Cache;
+  return Alone;
 
 })();

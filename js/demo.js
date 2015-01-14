@@ -1,7 +1,7 @@
 (function(){
 
-  // Get a Cache instance and tell it to get to work
-  var myCache = new Cache({
+  // Get a Alone instance and tell it to get to work
+  var myAlone = new Alone({
     api_url: 'http://live-bemis.gotpantheon.com/rest/products',
     collection: 'products',
     collection_reserve: 50,
@@ -20,21 +20,21 @@
   // Event fires after PouchDB sets up the local datastore.  Callback will
   // receive an object with a few properties of the collection, of which
   // doc_count is probably most useful (if zero, this is probably a new db).
-  myCache.on('collection_initialized', function(info) {
+  myAlone.on('collection_initialized', function(info) {
       console.log('Collection initialized.  Some info:');
       console.log(info);
   });
 
   // update_started
   // Fires when the heartbeat refresh_content method begins to do work.
-  myCache.on('update_started', function() {
+  myAlone.on('update_started', function() {
       console.log('update_started event fired');
   });
 
   // update_complete
   // Fires after a full run of the "heartbeat" refresh_content method. Callback
   // will receive an array of all new/updated records fetched.
-  myCache.on('update_complete', function(data) {
+  myAlone.on('update_complete', function(data) {
     if (!_.isArray(data) || data.length < 1) {
       console.log('Update run complete. No new data since the previous run.');
     } else {
@@ -45,26 +45,26 @@
 
   // download_initialized
   // Fires when a file download is about to be attempted
-  myCache.on('download_initialized', function(filename) {
+  myAlone.on('download_initialized', function(filename) {
       console.log('Download of ' + filename + ' requested.');
   });
 
   // download_complete
-  // Fires when a file has been downloaded to browser cache, but not yet stored
+  // Fires when a file has been downloaded to browser Alone, but not yet stored
   // in local file system.
-  myCache.on('download_complete', function(filename) {
+  myAlone.on('download_complete', function(filename) {
       console.log('Download of ' + filename + ' (to tmp) is complete.');
   });
 
   // download_stored
   // Fires when file has been successfully stored to the local file system.
-  myCache.on('download_stored', function(filename) {
+  myAlone.on('download_stored', function(filename) {
       console.log(filename + ' has been stored locally.');
   });
 
   // Now, just to make the demo actually do something...
   // Load all products into the DOM
-  myCache.db.allDocs({include_docs:true}, function(err, result) {
+  myAlone.db.allDocs({include_docs:true}, function(err, result) {
     var container = jQuery('.products');
     container.html('');
     container.append('<li>All data loaded from local store.</li>');
