@@ -1,9 +1,5 @@
 **Alone.js** will keep your website alive long after your internet connection has *died.*  
 
-##Notes
-
-- should upgrade to web workers: <https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/basic_usage>
-
 ##Related Projects
 
 Meteor:
